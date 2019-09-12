@@ -1,7 +1,7 @@
-import LoadData as LD
 import numpy as np
+import pandas as pd
 
-df = LD.load_csv('./ex1/data/ex1data2.txt')
+df = pd.read_csv('./Data/ex1data2.txt')
 
 x = df.iloc[:, :2].values
 y = df.iloc[:, 2:].values

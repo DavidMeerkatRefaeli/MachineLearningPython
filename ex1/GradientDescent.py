@@ -5,12 +5,8 @@ from ex1.ComputeCost import compute_cost as cc
 def gradient_descent(X, y, theta, alpha, iterations):
     m = len(y)
     J_history = np.zeros((iterations, 1))
-
     for it in range(iterations):
-        h = np.matmul(X, theta)  # hypothesis
-        # X.T * (h - y) = sum((h - y) .* X
-        theta -= alpha * (1 / m) * (np.matmul(X.T, (h - y)))
-
+        h = X @ theta  # hypothesis
+        theta -= alpha * (1 / m) * (X.T @ (h - y))
         J_history[it] = cc(X, y, theta)
-
     return theta, J_history
