@@ -1,43 +1,58 @@
-import LoadData as LD
-import pandas as pd
+from functools import partial
+
 import numpy as np
 import matplotlib.pyplot as plt
-from Sigmoid import sigmoid as sig
-from CostFunctionLogistic import cost_function, gradient
 from scipy import optimize as op
 
-# df = LD.load_csv('./ex2/Data/ex2data1.txt')
-#
-# x = df.iloc[:, :2].values
-# y = df.iloc[:, 2:].values
+from ex2.Sigmoid import sigmoid as sig
+from ex2.CostFunctionLogistic import cost_function, gradient_function
 
+# Load data
 data = np.loadtxt('./Data/ex2data1.txt', delimiter=',')
-x = data[:, 0:2]
-y = data[:, 2]
+x = data[:, :2]
+y = data[:, 2].reshape((-1, 1))
+
 
 def scatter(x, y):
     pos = np.where(y == [1])
     neg = np.where(y == [0])
-    plt.scatter(x[pos, 0], x[pos, 1], c='g', marker='+')
-    plt.scatter(x[neg, 0], x[neg, 1], c='r', marker='x')
+    plt.scatter(x[pos, 0], x[pos, 1], c='g', marker='+', label='Admitted')
+    plt.scatter(x[neg, 0], x[neg, 1], c='r', marker='x', label='Not Admitted')
+    plt.legend(loc='upper right')
 
 
-# scatter(x, y)
+# Visualizing the data
+scatter(x, y)
+plt.show()
 
-# print(sig([1, 8, 12]))
+# Warmup exercise: sigmoid function
+print(sig([0, 1, -3]))
+
+# Cost function and gradient
 m = np.size(y, axis=0)  # data points, rows
 d = np.size(x, axis=1)  # variables, cols
-theta = np.zeros(d+1).reshape((-1, 1))  # initialize fitting parameters
 X = np.c_[np.ones(m), x]  # Add a column of ones to x
+theta = np.zeros(d+1)  # initialize fitting parameters
+cost = cost_function(X, y, theta)
+print(f'Cost at initial theta (zeros): {cost}')
+gradient = gradient_function(X, y, theta)
+print(f'Gradient at initial theta (zeros): {gradient}')
 
-# cost = cost_function(theta, X, y)
-# gradient = gradient(theta, X, y)
+# Learning parameters using fminunc (Quasi-Newton = BFGS)
+cost_func = partial(cost_function, X, y)
+grad_func = partial(gradient_function, X, y)
 
-# theta_opt = op.fmin_bfgs(cost_function, theta, fprime=gradient, args=(X, y), maxiter=400)
-theta_opt = op.minimize(cost_function, theta, method='bfgs', jac=gradient, args=(X, y)).x
-J = cost_function(theta_opt, X, y)
-# print(theta_opt)
-# print(J)
+# Option 1
+theta_opt = op.fmin_bfgs(cost_func, theta, fprime=grad_func, maxiter=400)
+J = cost_func(theta_opt)
+print(f'Cost at theta found by BFGS: {J}')
+print(f'Theta: {theta_opt}')
+
+# Option 2
+# theta_opt = op.minimize(cost_func, theta, method='bfgs', jac=grad_func).x
+# J = cost_func(theta_opt)
+# print(f'Cost at theta found by BFGS: {J}')
+# print(f'Theta: {theta_opt}')
 
 
 def plot_decision_boundary():
@@ -46,14 +61,21 @@ def plot_decision_boundary():
     plt.plot(x_plot, y_plot)
 
 
+# Plot Boundary
 plot_decision_boundary()
+scatter(x, y)
+plt.show()
+
+# Predict probability for a student with score 45 on exam 1  and score 85 on exam 2
+prob = sig(np.array([1, 45, 85]) @ theta_opt)
+print(f'For a student with scores 45 and 85, we predict an admission probability of {prob}')
+
 
 def predict(theta, X):
     prob = sig(X @ theta)
     return prob >= 0.5
 
 
-p = predict(theta_opt,  X)
-print(np.mean(p == y))
-
-# plt.show()
+# Compute accuracy on our training set
+p = predict(theta_opt,  X).reshape((-1, 1))
+print(f'Train Accuracy: {np.mean(p == y)*100} %')
