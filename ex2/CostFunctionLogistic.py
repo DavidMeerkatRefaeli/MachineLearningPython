@@ -26,7 +26,7 @@ def cost_function_reg(X, y, lam, theta):
     theta_1[0] = 0
     m = len(y)
     J = (np.negative(y.T) @ np.log(h) - (1-y).T @ np.log(1-h)) / m + (lam / (2*m))*np.sum(theta_1**2)
-    return J
+    return np.asscalar(J)
 
 
 def gradient_reg(X, y, lam, theta):
@@ -36,4 +36,4 @@ def gradient_reg(X, y, lam, theta):
     theta_1[0] = 0
     m = len(y)
     grad = (X.T @ (h - y)) / m + (lam / m)*theta_1
-    return grad
+    return grad.flatten()
