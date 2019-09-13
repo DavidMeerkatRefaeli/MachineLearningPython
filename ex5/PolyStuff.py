@@ -17,3 +17,5 @@ def poly_plot(min_x, max_x, mu, sigma, theta, p):
     x_poly = (x_poly - mu) / sigma
     x_poly = np.c_[np.ones(np.size(x, 0)), x_poly]
     plt.plot(x, x_poly @ theta, '--', linewidth=2)
+    plt.title('Polynomial fit')
+

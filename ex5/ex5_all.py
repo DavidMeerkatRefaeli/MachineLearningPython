@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 # Regularized Linear Regression
 # Load the data
 from ex1.FeatureNormalization import feature_norm
-from ex5.LearningCurves import learning_curves
+from ex5.LearningCurves import learning_curves, learning_curves_random
 from ex5.LinearRegressionCostFunction import linear_regression_cost_function, linear_regression_gradient_function
 from ex5.PolyStuff import poly_features, poly_plot
 from ex5.TrainLinearRegression import train_linear_reg
@@ -26,6 +26,7 @@ def scatter(X, y):
     plt.scatter(X, y, marker='x', c='r')
     plt.xlabel('Change in water level (x)')
     plt.ylabel('Water flowing out of the dam (y)')
+    plt.title('Data')
 
 
 scatter(X, y)
@@ -49,6 +50,7 @@ def plot_line(X, theta):
     X_plot = np.linspace(np.min(X) - 5, np.max(X) + 5, 100).reshape(-1, 1)
     y_plot = np.c_[np.ones(len(X_plot)), X_plot] @ theta
     plt.plot(X_plot, y_plot)
+    plt.title('Linear fit')
 
 
 # Plot fit over the data
@@ -61,10 +63,13 @@ plt.show()
 def plot_learning_curves(err_train, err_val, m):
     m_vals = np.arange(1, m + 1)
     plt.plot(m_vals, err_train, m_vals, err_val)
+    plt.legend(('train', 'val'), loc='best')
     plt.xlabel('Number of training examples')
     plt.ylabel('Error')
-    plt.xlim((0, 13))
-    plt.ylim((0, 100))
+    plt.title('Learning Curve')
+    # plt.xlim((0, 13))
+    # plt.ylim((0, 100))
+
 
 # Learning curves
 err_train, err_val = learning_curves(np.c_[np.ones(m), X], y, np.c_[np.ones(np.size(Xval, 0)), Xval], yval, lambd)
@@ -104,5 +109,41 @@ err_train, err_val = learning_curves(X_poly, y, X_poly_val, yval, lambd)
 plot_learning_curves(err_train, err_val, m)
 plt.show()
 
+
 # Selecting lambda using a cross validation set
+def validation_curve(X, y, Xval, yval):
+    lambda_vec = np.array([0, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10]).reshape(-1, 1)
+    l = np.size(lambda_vec, 0)
+    error_train = np.zeros((l, 1))
+    error_val = np.zeros((l, 1))
+    for i in range(l):
+        lambd = lambda_vec[i, 0]
+        theta = train_linear_reg(X, y, lambd)
+        error_train[i, 0] = linear_regression_cost_function(X, y, 0, theta)
+        error_val[i, 0] = linear_regression_cost_function(Xval, yval, 0, theta)
+    return lambda_vec, error_train, error_val
+
+
+def plot_validation_curve(lambda_vec, error_train, error_val):
+    plt.plot(lambda_vec, error_train, lambda_vec, error_val)
+    plt.legend(('train', 'val'), loc='best')
+    plt.xlabel('Lambda')
+    plt.ylabel('Error')
+    plt.title('Validation Curve')
+
+
 lambda_vec, error_train, error_val = validation_curve(X_poly, y, X_poly_val, yval)
+plot_validation_curve(lambda_vec, error_train, error_val)
+plt.show()
+
+
+# Computing test set error
+test_theta = train_linear_reg(X_poly_test, ytest, 3)
+J = linear_regression_cost_function(X_poly_test, ytest, 3, test_theta)
+print(f'Test error: {J} ')
+
+# Plotting learning curves with randomly selected examples
+lambd = 0.01
+err_train, err_val = learning_curves_random(X_poly, y, X_poly_val, yval, lambd)
+plot_learning_curves(err_train, err_val, m)
+plt.show()
