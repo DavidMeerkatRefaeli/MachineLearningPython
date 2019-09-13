@@ -66,14 +66,11 @@ for i in range(len(theta0_vals)):
         t = np.array([theta0_vals[i], theta1_vals[j]])
         j_vals[i, j] = cc(X_1, y, t)
 theta0_vals, theta1_vals = np.meshgrid(theta0_vals, theta1_vals)
-theta0_vals = theta0_vals.T
 # For some reason, meshgrid returns the transposed values, so we need to fix this
-theta1_vals = theta1_vals.T
-
+j_vals = j_vals.T
 
 def contour(X, Y, Z):
-    # Couldn't do the logspace thingy... so using regular levels
-    plt.contour(X, Y, Z, levels=20)
+    plt.contour(X, Y, Z, levels=np.logspace(-2, 3, 20))
     plt.colorbar()
 
 
