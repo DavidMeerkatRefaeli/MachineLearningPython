@@ -49,10 +49,10 @@ print(f'Cost at theta found by BFGS: {J}')
 print(f'Theta: {theta_opt}')
 
 # Option 2
-# theta_opt = op.minimize(cost_func, theta, method='bfgs', jac=grad_func).x
-# J = cost_func(theta_opt)
-# print(f'Cost at theta found by BFGS: {J}')
-# print(f'Theta: {theta_opt}')
+theta_opt = op.minimize(cost_func, theta, method='bfgs', jac=grad_func).x
+J = cost_func(theta_opt)
+print(f'Cost at theta found by BFGS: {J}')
+print(f'Theta: {theta_opt}')
 
 
 def plot_decision_boundary():
