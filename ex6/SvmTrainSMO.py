@@ -94,7 +94,7 @@ def svm_train(X, y, C, kernel_func, tol=1e-3, max_iter=5):
     # Save the model
     idx = alphas > 0
     model = {}
-    model.X = X[idx,:]
+    model.X = X[idx, :]
     model.y = y[idx]
     model.kernel = kernel_func
     model.b = b
