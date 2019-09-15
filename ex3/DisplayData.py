@@ -3,7 +3,7 @@ import math
 from matplotlib import pyplot as plt
 
 
-def display_data(X):
+def display_data(X, show=True):
     m, n = X.shape
     width = round(math.sqrt(n))
     height = (n // width)
@@ -29,4 +29,5 @@ def display_data(X):
         if curr > m:
             break
     plt.imshow(display_array.T, interpolation='nearest')
-    plt.show()
+    if show:
+        plt.show()

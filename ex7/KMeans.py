@@ -7,7 +7,7 @@ from ex7.FindClosestCentroid import find_closest_centroids
 
 
 # K-Means Clustering
-from ex7.RunKMeans import kMeans
+from ex7.RunKMeans import kMeans, kMeans_init_centroids
 
 data = scipy.io.loadmat('./Data/ex7data2.mat')
 X = data['X']
@@ -23,14 +23,6 @@ print(f'Closest centroids for the first 3 examples: {idx[0:3]}')
 # Compute means based on the closest centroids found in the previous part
 centroids = compute_centroids(X, idx, k)
 print(f'Centroids computed after initial finding of closest centroids:\n{centroids}')
-
-
-# Random initialization
-def kMeans_init_centroids(X, k):
-    m = np.size(X, 0)
-    idx = np.random.permutation(m)[:k]
-    return X[idx]
-
 
 random_centroids = kMeans_init_centroids(X, 3)
 print(f'Random centroids:\n{random_centroids}')
@@ -51,5 +43,11 @@ for i in range(m):
     X_recovered[i, :] = centroids[idx[i], :]
 
 X_recovered = X_recovered.reshape((img_size[0], img_size[1], img_size[2]))
+fig = plt.figure(figsize=(8, 4))
+fig.add_subplot(1, 2, 1)
+plt.title("Original")
+plt.imshow(A)
+fig.add_subplot(1, 2, 2)
+plt.title("Compressed")
 plt.imshow(X_recovered)
 plt.show()
