@@ -22,6 +22,13 @@ centroids, idx = kMeans(X, k, initial_centroids, max_iter)
 m, n = X.shape
 indices = np.random.choice(m, 1000)
 
+# 1st show the real colors
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(X[indices, 0], X[indices, 1], X[indices, 2], c=X[indices, :], marker='o')
+plt.title('3D (real) colors of selected 1000 pixels')
+plt.show()
+
 
 def get_colors(indices, idx, centroids):
     m = len(indices)
@@ -32,12 +39,13 @@ def get_colors(indices, idx, centroids):
     return colors
 
 
+# Now show k-means colors
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 # Make the colors the actual colors assigned to each original pixel
 colors = get_colors(indices, idx, centroids)
 ax.scatter(X[indices, 0], X[indices, 1], X[indices, 2], c=colors, marker='o')
-plt.title('3D colors of selected 1000 pixels')
+plt.title('3D (k-means) colors of selected 1000 pixels')
 plt.show()
 
 # PCA and project the data to 2D
