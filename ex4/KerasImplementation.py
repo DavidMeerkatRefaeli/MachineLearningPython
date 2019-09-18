@@ -20,7 +20,7 @@ def set_model():
         keras.layers.Dense(25, activation=tf.nn.sigmoid),
         keras.layers.Dense(10, activation=tf.nn.softmax)
     ])
-    model.compile(optimizer='adam',
+    model.compile(optimizer='adam',  # Conjugate Gradient is not available in keras
                   loss='sparse_categorical_crossentropy',  # does the 1-hot encoding for us
                   metrics=['accuracy'])
 
