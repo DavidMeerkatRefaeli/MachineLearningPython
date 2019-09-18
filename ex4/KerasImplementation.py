@@ -7,7 +7,6 @@ from tensorflow import keras  # ... and this
 # Load data
 #     - X is a (5000,400) matrix with 5000 images of 20x20 pixels (=400)
 #     - Y is a (5000,1) vector, with output from 1 to 10, where 10 means 0
-from tensorflow.python.keras import regularizers
 mat = scipy.io.loadmat('./Data/ex3data1.mat')
 X = mat['X']
 y = mat['y']
