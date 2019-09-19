@@ -16,31 +16,58 @@ mat = scipy.io.loadmat('./Data/ex3data1.mat')
 X = mat['X']
 y = np.int32(mat['y'])
 y = np.where(y == 10, 0, y).squeeze()  # to avoid confusion, let's change 10 to what it really is: 0
-
-# We have to turn the y vector to one-hot encoding
-y_one_hot = np.zeros((len(y), 10))
-y_one_hot[np.arange(len(y)), y] = 1
+m = X.shape[0]
 
 # X must be casted from float64 to float32 as it is the default dtype in tf
-tf_x = tf.placeholder(tf.float32, (None, X.shape[1]))                # input x
-tf_y_one_hot = tf.placeholder(tf.int32, (None, y_one_hot.shape[1]))  # input y_one_hot
+tf_x = tf.placeholder(tf.float32, (None, X.shape[1]))  # input x
+
+# Ex. 3 - part 2 - Load some preprocessed weights for initial feed-forward exploration
+#     - Theta1 - (25,401) - the extra 1 is for the bias term, reduces to 25 dimensions in the latent space
+#     - Theta2 - (10,26) - the extra 1 is for the bias term, reduces to 10 dimensions in the output space
+mat_w = scipy.io.loadmat('./Data/ex3weights.mat')
+Theta1 = mat_w['Theta1'][:, 1:]  # No need to add the bias
+Theta2 = mat_w['Theta2'][:, 1:]  # No need to add the bias
+w1 = tf.constant_initializer(Theta1.T)
+w2 = tf.constant_initializer(Theta2.T)
 
 # neural network layers
-layer1 = tf.layers.dense(tf_x, 25, tf.nn.sigmoid)   # hidden layer
-output = tf.layers.dense(layer1, 10)                # output layer
+layer1 = tf.layers.dense(tf_x, 25, tf.nn.sigmoid, kernel_initializer=w1)   # hidden layer
+output = tf.layers.dense(layer1, 10, kernel_initializer=w2)                # output layer
 
 # Note we didn't set any activation function on the output layer. This is because the sigmoid_cross_entropy
 # already does it when calculating the loss ... (:-?) so we will have to do it ourselves when computing accuracy
 
-# Parameters
+init = tf.global_variables_initializer()
+with tf.Session() as sess:
+    sess.run(init)
+    pred = sess.run(tf.argmax(tf.sigmoid(output), axis=1), feed_dict={tf_x: X}) + 1  # +1 to make it as y (1-10)
+    pred = np.where(pred == 10, 0, pred)  # Change 10 to 0
+    pred_y = pred == y
+    print(f'Pre-Trained Accuracy: {np.mean(pred_y) * 100:.2f}%')
+
+    i = np.random.randint(m)
+    X_i = X[i, :].reshape((1, -1))
+    single_pred = sess.run(tf.argmax(tf.sigmoid(output), axis=1), feed_dict={tf_x: X_i}) + 1
+    print(f"single prediction: {single_pred % 10} | expected: {y[i]}")
+
+# Ex. 4 - backpropagation
 num_steps = 500
+
+# We have to turn the y vector to one-hot encoding, because of how sigmoid_cross_entropy works
+y_one_hot = np.zeros((len(y), 10))
+y_one_hot[np.arange(len(y)), y] = 1
+
+tf_y_one_hot = tf.placeholder(tf.int32, (None, y_one_hot.shape[1]))  # input y_one_hot
+
+# neural network layers - this time without initialization
+layer1 = tf.layers.dense(tf_x, 25, tf.nn.sigmoid)   # hidden layer
+output = tf.layers.dense(layer1, 10)                # output layer
 
 # Choose cost, optimizer and accuracy metric
 loss_op = tf.losses.sigmoid_cross_entropy(multi_class_labels=y_one_hot, logits=output)
 optimizer = tf.train.AdamOptimizer()
 train_op = optimizer.minimize(loss_op)
 
-# init = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
 init = tf.global_variables_initializer()
 with tf.Session() as sess:
     sess.run(init)
