@@ -1,7 +1,5 @@
-# This is a TF implementation of the NN exercises - note I still haven't figured an easy way to set pretrained weight
-# on the network. 
-# Also note that I didn't use the in-built tf.metrics.accuracy because it gives weird results.
-# Also note that it might have been better to use sparse_softmax loss function, which would save the need to do one_hot, 
+# This is a TF implementation of the NN exercises.
+# Note that it might have been better to use sparse_softmax loss function, which would save the need to do one_hot,
 # but I tried to be as loyal to the original calculations as possible
 
 import scipy.io
@@ -20,8 +18,13 @@ m = X.shape[0]
 
 # X must be casted from float64 to float32 as it is the default dtype in tf
 tf_x = tf.placeholder(tf.float32, (None, X.shape[1]))  # input x
+tf_y = tf.placeholder(tf.int32, len(y))
 
-# Ex. 3 - part 2 - Load some preprocessed weights for initial feed-forward exploration
+#################################
+# Ex. 3 - part 2 - Feed-forward #
+#################################
+
+# Load some preprocessed weights for initial feed-forward exploration
 #     - Theta1 - (25,401) - the extra 1 is for the bias term, reduces to 25 dimensions in the latent space
 #     - Theta2 - (10,26) - the extra 1 is for the bias term, reduces to 10 dimensions in the output space
 mat_w = scipy.io.loadmat('./Data/ex3weights.mat')
@@ -43,14 +46,17 @@ with tf.Session() as sess:
     pred = sess.run(tf.argmax(tf.sigmoid(output), axis=1), feed_dict={tf_x: X}) + 1  # +1 to make it as y (1-10)
     pred = np.where(pred == 10, 0, pred)  # Change 10 to 0
     pred_y = pred == y
-    print(f'Pre-Trained Accuracy: {np.mean(pred_y) * 100:.2f}%')
+    print(f'Pre-Trained Accuracy: {np.mean(pred_y)*100:.2f}%')
 
     i = np.random.randint(m)
     X_i = X[i, :].reshape((1, -1))
     single_pred = sess.run(tf.argmax(tf.sigmoid(output), axis=1), feed_dict={tf_x: X_i}) + 1
     print(f"single prediction: {single_pred % 10} | expected: {y[i]}")
 
-# Ex. 4 - backpropagation
+############################
+# Ex. 4 - Back-propagation #
+############################
+
 num_steps = 500
 
 # We have to turn the y vector to one-hot encoding, because of how sigmoid_cross_entropy works
@@ -68,17 +74,29 @@ loss_op = tf.losses.sigmoid_cross_entropy(multi_class_labels=y_one_hot, logits=o
 optimizer = tf.train.AdamOptimizer()
 train_op = optimizer.minimize(loss_op)
 
-init = tf.global_variables_initializer()
+# Accuracy will use the regular y, and not the one hot encoding
+# Note that it's locally scoped, and one must re-initialize it per every step
+accuracy, update_op = tf.metrics.accuracy(labels=y, predictions=tf.argmax(tf.sigmoid(output), axis=1))
+
+init_global = tf.global_variables_initializer()
+init_local = tf.local_variables_initializer()
 with tf.Session() as sess:
-    sess.run(init)
+    sess.run(init_global)
     for step in range(1, num_steps+1):
         # train and net output
+        sess.run(init_local)
         loss = sess.run(loss_op, feed_dict={tf_x: X, tf_y_one_hot: y_one_hot})
         sess.run(train_op, feed_dict={tf_x: X, tf_y_one_hot: y_one_hot})
+
+        sess.run(update_op, feed_dict={tf_x: X, tf_y: y})
+        acc = sess.run(accuracy, feed_dict={tf_x: X, tf_y: y})
+
         if (step % 50 == 0) | (step == 1):
-            print(f'step {step} - loss: {loss}')
+            print(f'step {step} - loss: {loss} | acc: {acc*100:.2f}%')
 
     print('Optimization finished')
+
+    # We can check the accuracy is calculated correctly:
     prediction = sess.run(tf.argmax(tf.sigmoid(output), axis=1), feed_dict={tf_x: X})
     pred_y = prediction == y
-    print(f'Training Set Accuracy after training: {np.mean(pred_y) * 100}%')
+    print(f'Training Set Accuracy after training: {np.mean(pred_y)*100:.2f}%')
