@@ -80,16 +80,18 @@ accuracy, update_op = tf.metrics.accuracy(labels=y, predictions=tf.argmax(tf.sig
 
 init_global = tf.global_variables_initializer()
 init_local = tf.local_variables_initializer()
+feed_dict_y = {tf_x: X, tf_y: y}
 with tf.Session() as sess:
     sess.run(init_global)
     for step in range(1, num_steps+1):
         # train and net output
         sess.run(init_local)
-        loss = sess.run(loss_op, feed_dict={tf_x: X, tf_y_one_hot: y_one_hot})
-        sess.run(train_op, feed_dict={tf_x: X, tf_y_one_hot: y_one_hot})
+        feed_dict_y_one_hot = {tf_x: X, tf_y_one_hot: y_one_hot}
+        loss = sess.run(loss_op, feed_dict=feed_dict_y_one_hot)
+        sess.run(train_op, feed_dict=feed_dict_y_one_hot)
 
-        sess.run(update_op, feed_dict={tf_x: X, tf_y: y})
-        acc = sess.run(accuracy, feed_dict={tf_x: X, tf_y: y})
+        sess.run(update_op, feed_dict=feed_dict_y)
+        acc = sess.run(accuracy, feed_dict=feed_dict_y)
 
         if (step % 50 == 0) | (step == 1):
             print(f'step {step} - loss: {loss} | acc: {acc*100:.2f}%')
@@ -98,5 +100,51 @@ with tf.Session() as sess:
 
     # We can check the accuracy is calculated correctly:
     prediction = sess.run(tf.argmax(tf.sigmoid(output), axis=1), feed_dict={tf_x: X})
+    pred_y = prediction == y
+    print(f'Training Set Accuracy after training: {np.mean(pred_y)*100:.2f}%')
+
+
+# Another way to implement this, more manually/fine-grained:
+
+# Store layers weight & bias
+weights = {
+    'h1': tf.Variable(tf.random_normal([400, 25])),
+    'out': tf.Variable(tf.random_normal([25, 10]))
+}
+biases = {
+    'b1': tf.Variable(tf.random_normal([25])),
+    'out': tf.Variable(tf.random_normal([10]))
+}
+
+# Create model
+# Hidden fully connected layer with 25 neurons
+layer_1 = tf.nn.sigmoid(tf.add(tf.matmul(tf_x, weights['h1']), biases['b1']))
+# Output fully connected layer with a neuron for each class
+logits = tf.matmul(layer_1, weights['out']) + biases['out']
+
+# Define loss and optimizer
+loss_op = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=y_one_hot))
+optimizer = tf.train.AdamOptimizer()
+train_op = optimizer.minimize(loss_op)
+
+# Evaluate model
+correct_pred = tf.equal(tf.argmax(logits, 1), y)
+accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+
+# Initialize the variables (i.e. assign their default value)
+init = tf.global_variables_initializer()
+# Start training
+with tf.Session() as sess:
+    # Run the initializer
+    sess.run(init)
+    for step in range(1, num_steps + 1):
+        # Run optimization op (backprop)
+        sess.run(train_op, feed_dict=feed_dict_y)
+        if step % 50 == 0 or step == 1:
+            # Calculate batch loss and accuracy
+            loss, acc = sess.run([loss_op, accuracy], feed_dict=feed_dict_y)
+            print(f'Step {step}, Loss={loss}, Accuracy={acc*100:.2f}%')
+
+    prediction = sess.run(tf.argmax(tf.sigmoid(logits), axis=1), feed_dict={tf_x: X})
     pred_y = prediction == y
     print(f'Training Set Accuracy after training: {np.mean(pred_y)*100:.2f}%')
