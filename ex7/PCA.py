@@ -22,6 +22,9 @@ scatter(X)
 plt.show()
 
 # Implementing PCA
+# Note that standardizing X (using X_norm) is necessary when features are NOT of same scale
+# (This is equivalent of using the correlation matrix instead of covariance matrix)
+# But it never hurts to do so...
 X_norm, mu, sigma = feature_norm(X)
 
 
@@ -64,7 +67,7 @@ plt.title('First 100 faces')
 display_data(X[:100, :])
 
 # PCA on faces
-X_norm, _, _ = feature_norm(X)
+X_norm, _, _ = feature_norm(X)  # Note that standardizing X is not necessary when features are of same scale
 U, _ = pca(X_norm)
 plt.title('First 36 Eigenvectors')
 display_data(U[:, :36].T)
